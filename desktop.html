@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kelly Position Sizing Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f6f8fb;
+            --card-bg: #ffffff;
+            --primary: #005a9e;
+            --primary-alt: #0078d4;
+            --text: #1b1f24;
+            --muted: #6b7280;
+            --border: #e2e8f0;
+            --accent: #0ea5e9;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            background-color: var(--bg);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: 24px;
+        }
+
+        .panel {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid var(--border);
+            padding: 24px;
+        }
+
+        .sticky-table {
+            padding: 12px;
+        }
+
+        .panel--header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-card {
+            background-color: #f0f9ff;
+            border-radius: var(--radius);
+            padding: 16px;
+            border: 1px solid #dbeafe;
+        }
+
+        .summary-card__label {
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .summary-card__value {
+            margin-top: 8px;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .control {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .control input,
+        .control select,
+        .input-cell select {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text);
+            background-color: #fff;
+            min-width: 160px;
+        }
+
+        .input-cell select {
+            min-width: 120px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 6px 8px;
+            background-color: #f1f5f9;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .input-cell select:focus {
+            background-color: #fff;
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .control input:focus,
+        .control select:focus {
+            outline: none;
+            border-color: var(--primary-alt);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
+        }
+
+        .table-container {
+            margin-top: 16px;
+            overflow: auto;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 800px;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--card-bg);
+        }
+
+        th {
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        td:first-child,
+        th:first-child {
+            text-align: left;
+            position: sticky;
+            left: 0;
+            background: inherit;
+        }
+
+        tr:hover td {
+            background-color: #f8fafc;
+        }
+
+        /* Column hover highlighting */
+        .column-highlight {
+            background-color: #f8fafc !important;
+        }
+
+        /* Row highlighting for cross-table interaction */
+        .row-highlight {
+            background-color: #e0f2fe !important;
+        }
+
+        /* Clickable cells styling */
+        .clickable-cell {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .clickable-cell:hover {
+            background-color: #f0f9ff !important;
+        }
+
+        /* Empty cells styling */
+        .empty-cell {
+            color: #9ca3af;
+            font-style: italic;
+            background-color: #f9fafb;
+        }
+
+        .input-cell {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .input-cell input {
+            width: 100%;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 4px 6px;
+            background-color: #f1f5f9;
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .input-cell input:focus {
+            background-color: #fff;
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+        
+        /* Compress table row heights */
+        #trade-table-body tr {
+            height: 32px;
+        }
+        
+        #trade-table-body td {
+            padding: 4px 8px;
+            vertical-align: middle;
+        }
+        
+        #trade-table-body .input-cell {
+            padding: 2px;
+        }
+        
+        #trade-table-body .calculated {
+            font-size: 0.9rem;
+            padding: 4px 6px;
+        }
+        
+        /* Compress header row */
+        #trade-table-body thead th {
+            padding: 6px 8px;
+            font-size: 0.9rem;
+            height: 36px;
+        }
+        
+        /* Compressed column styles */
+        td[style*="width: 80px"] .input-cell input {
+            padding: 4px 6px;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        button.primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-alt) 100%);
+            color: #fff;
+        }
+
+        button.secondary {
+            background-color: #e2e8f0;
+            color: var(--text);
+        }
+
+        button.danger {
+            background-color: #fee2e2;
+            color: var(--danger);
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--primary-alt);
+            outline-offset: 2px;
+        }
+
+        .summary-row td {
+            font-weight: 600;
+            background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
+        }
+        
+        .summary-row:nth-of-type(1) td {
+            background: linear-gradient(135deg, #f1f5f9 0%, #f8fafc 100%);
+            border-top: 2px solid #e2e8f0;
+        }
+        
+        .summary-row:nth-of-type(2) td {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-top: 2px solid #0ea5e9;
+            font-weight: 700;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+
+        .charts-grid-2x2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 24px;
+            min-height: 600px;
+        }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: 100%;
+        }
+
+        .tables-grid .panel {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .tables-grid         .table-container {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        /* Sticky top table */
+        .sticky-table {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 16px;
+        }
+
+        /* Compressed Kelly Sizing Control Center */
+        .sticky-table .panel--header {
+            padding: 8px 12px;
+        }
+
+        .sticky-table h1 {
+            font-size: 1.25rem;
+            margin: 0 0 2px 0;
+        }
+
+        .sticky-table .footer-note {
+            font-size: 0.7rem;
+            margin: 0 0 4px 0;
+        }
+
+        .sticky-table .controls {
+            gap: 8px;
+        }
+
+        .sticky-table .control {
+            gap: 2px;
+        }
+
+        .sticky-table .control label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .sticky-table .control input {
+            padding: 4px 6px;
+            font-size: 0.85rem;
+        }
+
+        .sticky-table .control select {
+            padding: 4px 6px;
+            font-size: 0.85rem;
+        }
+
+        .sticky-table button {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+        }
+
+        .tables-grid table {
+            min-width: 600px;
+            width: 100%;
+        }
+
+        .tables-grid th,
+        .tables-grid td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+
+        .tables-grid th:first-child,
+        .tables-grid td:first-child {
+            max-width: 100px;
+        }
+
+        .tables-grid th:last-child,
+        .tables-grid td:last-child {
+            max-width: 100px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid-2x2 {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, auto);
+            }
+            
+            .tables-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tables-grid table {
+                min-width: 500px;
+            }
+        }
+
+        .chart-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 20px;
+            min-height: 300px;
+        }
+
+        .chart-card h2 {
+            margin-bottom: 12px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+
+        .toggle-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle input {
+            margin: 0;
+            accent-color: var(--primary);
+        }
+
+
+        .positive {
+            color: var(--success);
+        }
+
+        .negative {
+            color: var(--danger);
+        }
+
+        .warning {
+            color: #f59e0b;
+        }
+
+
+        .footer-note {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .panel--header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .control input,
+            .control select {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .actions {
+                width: 100%;
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="panel sticky-table">
+            <div class="panel--header">
+                <div>
+                    <h1>Kelly Sizing Control Center</h1>
+                    <p class="footer-note">Tune trade assumptions, visualize scenario impact, and monitor risk of ruin.</p>
+                </div>
+                <div class="controls">
+                    <div class="control">
+                        <label for="cap-risk">Capital at Risk</label>
+                        <input type="text" id="cap-risk" value="500,000" min="0" step="1000">
+                    </div>
+                    <div class="control">
+                        <label for="kelly-flex">Kelly Flex %</label>
+                        <input type="number" id="kelly-flex" value="50" min="0" max="100" step="5">
+                    </div>
+                    <div class="control">
+                        <label for="save-name">Save Configuration</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="save-name" placeholder="Enter name" style="flex: 1;">
+                            <button class="secondary" id="save-config" style="white-space: nowrap;">Save</button>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <label for="load-config">Load Configuration</label>
+                        <div style="display: flex; gap: 8px;">
+                            <select id="load-config" style="flex: 1;">
+                                <option value="">Select saved config...</option>
+                            </select>
+                            <button class="secondary" id="load-selected" style="white-space: nowrap;">Load</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel--header">
+                <h2>Trade Configuration</h2>
+                <div class="actions">
+                    <button class="secondary" id="duplicate-selected">Duplicate</button>
+                    <button class="danger" id="delete-selected">Delete</button>
+                    <button class="primary" id="add-trade">Add Trade</button>
+                    <button class="secondary" id="toggle-view" style="margin-left: 8px;">Expand Trades</button>
+                </div>
+            </div>
+            <div id="view-status" class="view-status" style="padding: 8px 16px; background-color: #f8fafc; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; color: #64748b;">
+                <span id="view-mode">Consolidated View</span> • <span id="trade-count">0</span> total trades
+            </div>
+            <div class="toggle-group">
+                <label class="toggle">
+                    <input type="checkbox" id="lock-win-loss" checked>
+                    Lock win/loss in %
+                </label>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Type</th>
+                            <th># Trades</th>
+                            <th>Win %</th>
+                            <th>Loss %</th>
+                            <th>Prob. %</th>
+                            <th>Kelly Ratio %</th>
+                            <th>Adj. Kelly %</th>
+                            <th>Avg Cap @ Risk</th>
+                            <th>Avg Position Size</th>
+                            <th>Avg Expected PnL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trade-table-body"></tbody>
+                    <tfoot>
+                        <tr class="summary-row">
+                            <td colspan="8">Simple Average</td>
+                            <td id="simple-avg-cap-risk"></td>
+                            <td id="simple-avg-position-size"></td>
+                            <td id="simple-avg-exp-pnl"></td>
+                        </tr>
+                        <tr class="summary-row">
+                            <td colspan="8">Total</td>
+                            <td id="total-cap-risk"></td>
+                            <td id="total-position-size"></td>
+                            <td id="total-exp-pnl"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="charts-grid-2x2">
+            <div class="chart-card">
+                <h2>Expected PnL Distribution</h2>
+                <div class="chart-container">
+                <canvas id="pnl-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h2>Capital Allocation by Type</h2>
+                <div class="chart-container">
+                <canvas id="allocation-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h2>Slippage Sensitivity Analysis</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+                    Kelly % impact and PnL changes across slippage levels (0-100 bps)
+                </div>
+                <div class="chart-container">
+                    <canvas id="slippage-chart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h2>Kelly Flex Sensitivity</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+                    Expected PnL across Kelly Flex levels (25-100%)
+                </div>
+                <div class="chart-container">
+                    <canvas id="kelly-flex-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel--header">
+                <h2>Comprehensive Trade Analysis</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                    Complete analysis including returns, losses, ratios, probabilities, and position sizing
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>% Return</th>
+                            <th>% Loss</th>
+                            <th>Win/Loss Ratio</th>
+                            <th>Probability</th>
+                            <th>Kelly Ratio %</th>
+                            <th>Edge</th>
+                            <th>Avg Position Size</th>
+                            <th>Expected PnL</th>
+                        </tr>
+                    </thead>
+                    <tbody id="combined-analysis-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel--header">
+                <h2>Return/Loss Sensitivity</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                    Win/Loss ratios across different return and loss percentages
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>% Loss</th>
+                            <th>2% Return</th>
+                            <th>3% Return</th>
+                            <th>4% Return</th>
+                            <th>5% Return</th>
+                            <th>6% Return</th>
+                            <th>7% Return</th>
+                            <th>8% Return</th>
+                            <th>9% Return</th>
+                            <th>10% Return</th>
+                            <th>12% Return</th>
+                            <th>15% Return</th>
+                            <th>20% Return</th>
+                        </tr>
+                    </thead>
+                    <tbody id="return-loss-sensitivity-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel--header">
+                <h2>Position Size Sensitivity</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                    Average position sizes across different win/loss ratios and probabilities
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>W/L Ratio</th>
+                            <th>50% Prob</th>
+                            <th>55% Prob</th>
+                            <th>60% Prob</th>
+                            <th>65% Prob</th>
+                            <th>70% Prob</th>
+                            <th>75% Prob</th>
+                            <th>80% Prob</th>
+                        </tr>
+                    </thead>
+                    <tbody id="position-size-sensitivity-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div class="panel">
+            <div class="panel--header">
+                <h2>Dynamic Position Sizing Analysis</h2>
+                <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                    Select your expected return and loss, then see position sizing sensitivity across probabilities
+                </div>
+            </div>
+            <div class="dynamic-controls" style="display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap;">
+                <div class="control">
+                    <label for="dynamic-return">Expected Return %</label>
+                    <select id="dynamic-return">
+                        <option value="1">1%</option>
+                        <option value="2">2%</option>
+                        <option value="3">3%</option>
+                        <option value="4">4%</option>
+                        <option value="5" selected>5%</option>
+                        <option value="6">6%</option>
+                        <option value="7">7%</option>
+                        <option value="8">8%</option>
+                        <option value="9">9%</option>
+                        <option value="10">10%</option>
+                        <option value="12">12%</option>
+                        <option value="15">15%</option>
+                        <option value="20">20%</option>
+                        <option value="25">25%</option>
+                        <option value="30">30%</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <label for="dynamic-loss">Expected Loss %</label>
+                    <select id="dynamic-loss">
+                        <option value="0.5">0.5%</option>
+                        <option value="1">1%</option>
+                        <option value="1.5">1.5%</option>
+                        <option value="2">2%</option>
+                        <option value="2.5" selected>2.5%</option>
+                        <option value="3">3%</option>
+                        <option value="4">4%</option>
+                        <option value="5">5%</option>
+                        <option value="6">6%</option>
+                        <option value="7">7%</option>
+                        <option value="8">8%</option>
+                        <option value="10">10%</option>
+                        <option value="12">12%</option>
+                        <option value="15">15%</option>
+                        <option value="20">20%</option>
+                    </select>
+                </div>
+                <div class="control">
+                    <label for="dynamic-cap-risk">Capital at Risk</label>
+                    <input type="text" id="dynamic-cap-risk" value="500,000" placeholder="Enter amount">
+                </div>
+                <div class="control">
+                    <label for="dynamic-kelly-flex">Kelly Flex %</label>
+                    <input type="number" id="dynamic-kelly-flex" value="50" min="0" max="100" step="5">
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Probability</th>
+                            <th>Kelly Ratio %</th>
+                            <th>Adj. Kelly %</th>
+                            <th>Position Size</th>
+                            <th>Cap @ Risk</th>
+                            <th>Expected PnL</th>
+                            <th>Win/Loss Ratio</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dynamic-analysis-body"></tbody>
+                </table>
+            </div>
+            <div class="math-example" id="math-example" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 24px; margin-top: 20px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
+                <div style="display: flex; align-items: center; margin-bottom: 20px;">
+                    <div style="background: rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 8px; margin-right: 12px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M9 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-4m-8 0V9a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-6 0h6"/>
+                        </svg>
+                    </div>
+                    <h3 style="margin: 0; color: white; font-size: 20px; font-weight: 600;">Step-by-Step Math Example</h3>
+                </div>
+                <div id="math-steps" style="background: rgba(255, 255, 255, 0.95); border-radius: 8px; padding: 20px; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace; font-size: 14px; line-height: 1.8; color: #1f2937; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const initialData = [
+            { type: "New Issue", trades: 4, win: 2.0, loss: 1.5, prob: 70, kellyRatio: 75 },
+            { type: "EMB", trades: 4, win: 2.0, loss: 1.0, prob: 60, kellyRatio: 75 },
+            { type: "Fades", trades: 4, win: 3.0, loss: 1.5, prob: 60, kellyRatio: 75 },
+            { type: "Structural", trades: 2, win: 6.0, loss: 3.0, prob: 55, kellyRatio: 75 }
+        ];
+
+        const tableBody = document.getElementById("trade-table-body");
+        const capRiskInput = document.getElementById("cap-risk");
+
+        let tradeData = [...initialData];
+        let charts = {};
+        let isExpandedView = false;
+
+        function createRow(data, index) {
+            const row = document.createElement("tr");
+            row.id = `row-${index}`;
+            
+            // Set original type for calculations in expanded view
+            if (data.originalType) {
+                row.dataset.originalType = data.originalType;
+            } else if (isExpandedView && data.tradeNumber) {
+                // For expanded view, store the base type without the number
+                row.dataset.originalType = data.type;
+            }
+            
+            // Show trade number in expanded view
+            const typeDisplay = isExpandedView && data.tradeNumber ? 
+                `${data.type} #${data.tradeNumber}` : data.type;
+            
+            row.innerHTML = `
+                <td><input type="checkbox" class="row-select" data-index="${index}"></td>
+                <td>
+                    <div class="input-cell">
+                        <select class="type-input">
+                            <option value="New Issue" ${data.type === "New Issue" ? "selected" : ""}>${isExpandedView && data.tradeNumber ? `New Issue #${data.tradeNumber}` : "New Issue"}</option>
+                            <option value="EMB" ${data.type === "EMB" ? "selected" : ""}>${isExpandedView && data.tradeNumber ? `EMB #${data.tradeNumber}` : "EMB"}</option>
+                            <option value="Fades" ${data.type === "Fades" ? "selected" : ""}>${isExpandedView && data.tradeNumber ? `Fades #${data.tradeNumber}` : "Fades"}</option>
+                            <option value="Structural" ${data.type === "Structural" ? "selected" : ""}>${isExpandedView && data.tradeNumber ? `Structural #${data.tradeNumber}` : "Structural"}</option>
+                            <option value="Other" ${data.type === "Other" ? "selected" : ""}>${isExpandedView && data.tradeNumber ? `Other #${data.tradeNumber}` : "Other"}</option>
+                        </select>
+                    </div>
+                </td>
+                <td style="width: 80px;"><div class="input-cell"><input type="number" class="trades-input" value="${data.trades || 1}" step="1" min="1"></div></td>
+                <td style="width: 80px;"><div class="input-cell"><input type="number" class="win-input" value="${data.win}" step="0.1" min="0"></div></td>
+                <td style="width: 80px;"><div class="input-cell"><input type="number" class="loss-input" value="${data.loss}" step="0.1" min="0"></div></td>
+                <td><div class="input-cell"><input type="number" class="prob-input" value="${data.prob}" step="1" min="0" max="100"></div></td>
+                <td class="kelly-ratio calculated"></td>
+                <td class="adj-kelly calculated"></td>
+                <td class="cap-at-risk calculated"></td>
+                <td class="avg-position calculated"></td>
+                <td class="exp-pnl calculated"></td>
+            `;
+            tableBody.appendChild(row);
+        }
+
+        function calculateAll() {
+            let totalCapRisk = 0;
+            let totalPosSize = 0;
+            let totalExpPnl = 0;
+            const capRisk = parseFloat(capRiskInput.value) || 0;
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value) / 100;
+            const calculations = [];
+
+            // Get all rows from the table, not just tradeData
+            const rows = tableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                if (!row) return;
+
+                const trades = parseInt(row.querySelector(".trades-input").value) || 1;
+                const win = parseFloat(row.querySelector(".win-input").value) / 100;
+                const loss = parseFloat(row.querySelector(".loss-input").value) / 100;
+                const prob = parseFloat(row.querySelector(".prob-input").value) / 100;
+                const type = row.querySelector(".type-input").value;
+                // In expanded view, use original type for grouping calculations
+                const calculationType = isExpandedView && row.dataset.originalType ? row.dataset.originalType : type;
+
+                const b = loss > 0 ? win / loss : 0;
+                const q = 1 - prob;
+                const kellyRatio = loss > 0 ? ((b * prob) - q) / b : 0;
+                const safeKellyRatio = Math.max(0, kellyRatio);
+                row.querySelector(".kelly-ratio").textContent = `${(safeKellyRatio * 100).toFixed(0)}%`;
+
+                const adjKelly = safeKellyRatio * kellyFlex;
+                row.querySelector(".adj-kelly").textContent = `${(adjKelly * 100).toFixed(0)}%`;
+
+                const capAtRisk = capRisk * adjKelly * trades;
+                const avgCapAtRisk = trades > 0 ? capAtRisk / trades : 0;
+                row.querySelector(".cap-at-risk").textContent = `$${(avgCapAtRisk * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                totalCapRisk += capAtRisk;
+
+                const posSize = loss > 0 ? capAtRisk / loss : 0;
+                totalPosSize += posSize;
+
+                const avgPosition = trades > 0 ? posSize / trades : 0;
+                row.querySelector(".avg-position").textContent = `$${(avgPosition * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+                const expectedEdge = (prob * win) - (q * loss);
+                const expPnl = posSize * expectedEdge;
+                const avgExpPnl = trades > 0 ? expPnl / trades : 0;
+                row.querySelector(".exp-pnl").textContent = `$${(avgExpPnl * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+                totalExpPnl += expPnl;
+
+                calculations.push({
+                    type: calculationType, trades, win, loss, prob, kellyRatio: safeKellyRatio,
+                    adjKelly, capAtRisk, posSize, expPnl, kellyFlex
+                });
+            });
+
+            // Group calculations by trade type for charts (consolidate expanded trades)
+            const groupedCalculations = {};
+            calculations.forEach(calc => {
+                if (!groupedCalculations[calc.type]) {
+                    groupedCalculations[calc.type] = {
+                        type: calc.type,
+                        trades: 0,
+                        win: calc.win,
+                        loss: calc.loss,
+                        prob: calc.prob,
+                        kellyRatio: calc.kellyRatio,
+                        adjKelly: calc.adjKelly,
+                        capAtRisk: 0,
+                        posSize: 0,
+                        expPnl: 0,
+                        kellyFlex: calc.kellyFlex
+                    };
+                }
+                groupedCalculations[calc.type].trades += calc.trades;
+                groupedCalculations[calc.type].capAtRisk += calc.capAtRisk;
+                groupedCalculations[calc.type].posSize += calc.posSize;
+                groupedCalculations[calc.type].expPnl += calc.expPnl;
+            });
+
+            const chartCalculations = Object.values(groupedCalculations);
+
+            const totalTrades = calculations.reduce((sum, calc) => sum + calc.trades, 0);
+            const totalAvgPositionSize = totalTrades > 0 ? totalPosSize / totalTrades : 0;
+            
+            // Update total trades display to show correct count
+            const totalTradesElement = document.getElementById('total-trades');
+            if (totalTradesElement) {
+                totalTradesElement.textContent = totalTrades;
+            }
+            
+            // Update view status
+            const tradeCountElement = document.getElementById('trade-count');
+            if (tradeCountElement) {
+                tradeCountElement.textContent = totalTrades;
+            }
+
+            // Calculate different types of averages
+            // Simple average: average of individual trade type averages
+            let simpleAvgCapAtRisk = 0;
+            let simpleAvgPositionSize = 0;
+            let simpleAvgExpPnl = 0;
+            
+            if (calculations.length > 0) {
+                calculations.forEach(calc => {
+                    simpleAvgCapAtRisk += calc.capAtRisk / calc.trades;
+                    simpleAvgPositionSize += calc.posSize / calc.trades;
+                    simpleAvgExpPnl += calc.expPnl / calc.trades;
+                });
+                simpleAvgCapAtRisk /= calculations.length;
+                simpleAvgPositionSize /= calculations.length;
+                simpleAvgExpPnl /= calculations.length;
+            }
+            
+            const totalAvgCapAtRisk = totalTrades > 0 ? totalCapRisk / totalTrades : 0;
+            const totalAvgExpPnl = totalTrades > 0 ? totalExpPnl / totalTrades : 0;
+            
+            
+            // First row: Simple Average (average of individual trade type averages)
+            document.getElementById("simple-avg-cap-risk").textContent = `$${(simpleAvgCapAtRisk * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            document.getElementById("simple-avg-position-size").textContent = `$${(simpleAvgPositionSize * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            document.getElementById("simple-avg-exp-pnl").textContent = `$${(simpleAvgExpPnl * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            
+            // Second row: Totals
+            document.getElementById("total-cap-risk").textContent = `$${(totalCapRisk * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            document.getElementById("total-position-size").textContent = `$${(totalPosSize * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+            document.getElementById("total-exp-pnl").textContent = `$${(totalExpPnl * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+
+            updateSummaryCards(chartCalculations, totalCapRisk, totalExpPnl, capRisk);
+            updateCharts(chartCalculations);
+        }
+
+        function updateSummaryCards(calculations, totalCapRisk, totalExpPnl, capRisk) {
+            const totalTrades = calculations.reduce((sum, calc) => sum + calc.trades, 0);
+            const weightedKelly = calculations.reduce((sum, calc) => sum + calc.adjKelly * calc.trades, 0);
+            const avgKelly = totalTrades > 0 ? weightedKelly / totalTrades : 0;
+            const capUtilization = capRisk > 0 ? (totalCapRisk / capRisk) * 100 : 0;
+            const expectedReturn = totalCapRisk > 0 ? (totalExpPnl / totalCapRisk) * 100 : 0;
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value);
+            
+            // Summary cards removed - no longer displaying summary metrics
+        }
+
+        function updateSlippageChart(calculations) {
+            const ctx = document.getElementById('slippage-chart').getContext('2d');
+            if (charts.slippageChart) charts.slippageChart.destroy();
+            
+            const slippageData = [];
+            const kellyImpactData = [];
+            const pnlImpactData = [];
+            const labels = [];
+            
+            for (let bps = 0; bps <= 100; bps += 10) {
+                const slippageRate = bps / 10000;
+                let totalAdjustedPnL = 0;
+                let totalAdjustedKelly = 0;
+                
+                calculations.forEach(calc => {
+                    const adjustedWin = Math.max(0, calc.win - slippageRate);
+                    const adjustedLoss = calc.loss + slippageRate;
+                    const b = adjustedLoss > 0 ? adjustedWin / adjustedLoss : 0;
+                    const q = 1 - calc.prob;
+                    const adjFullKelly = adjustedLoss > 0 ? ((b * calc.prob) - q) / b : 0;
+                    const safeAdjKelly = Math.max(0, adjFullKelly);
+                    totalAdjustedKelly += safeAdjKelly * calc.trades;
+                    
+                    const adjExpectedEdge = (calc.prob * adjustedWin) - (q * adjustedLoss);
+                    totalAdjustedPnL += calc.posSize * adjExpectedEdge;
+                });
+                
+                const baseKelly = calculations.reduce((sum, calc) => sum + calc.kellyRatio * calc.trades, 0);
+                const totalTrades = calculations.reduce((sum, calc) => sum + calc.trades, 0);
+                const avgAdjustedKelly = totalTrades > 0 ? totalAdjustedKelly / totalTrades : 0;
+                const avgBaseKelly = totalTrades > 0 ? baseKelly / totalTrades : 0;
+                const kellyImpactPct = avgBaseKelly > 0 ? ((avgAdjustedKelly / avgBaseKelly) - 1) * 100 : 0;
+                
+                labels.push(`${bps} bps`);
+                kellyImpactData.push(kellyImpactPct);
+                pnlImpactData.push(totalAdjustedPnL * 1000); // Show full amounts
+            }
+            
+            charts.slippageChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Kelly % Impact',
+                        data: kellyImpactData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        yAxisID: 'y',
+                        tension: 0.3,
+                        fill: true
+                    }, {
+                        label: 'Expected PnL ($)',
+                        data: pnlImpactData,
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        yAxisID: 'y1',
+                        tension: 0.3,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.datasetIndex === 0) {
+                                        return `Kelly Impact: ${context.parsed.y.toFixed(2)}%`;
+                                    } else {
+                                        return `Expected PnL: $${(context.parsed.y * 1000).toLocaleString()}`;
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Slippage Level'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Kelly % Impact'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toFixed(1) + '%';
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Expected PnL ($)'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0) + 'k';
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+        }
+
+        // Initialize
+        tradeData.forEach(createRow);
+        calculateAll();
+
+        // Add column hover functionality
+        function addColumnHoverListeners() {
+            document.querySelectorAll('table').forEach(table => {
+                const cells = table.querySelectorAll('td, th');
+                
+                cells.forEach(cell => {
+                    cell.addEventListener('mouseenter', function() {
+                        const columnIndex = Array.from(this.parentNode.children).indexOf(this);
+                        const rows = table.querySelectorAll('tr');
+                        
+                        rows.forEach(row => {
+                            const cellsInColumn = row.children[columnIndex];
+                            if (cellsInColumn) {
+                                cellsInColumn.classList.add('column-highlight');
+                            }
+                        });
+                    });
+                    
+                    cell.addEventListener('mouseleave', function() {
+                        const columnIndex = Array.from(this.parentNode.children).indexOf(this);
+                        const rows = table.querySelectorAll('tr');
+                        
+                        rows.forEach(row => {
+                            const cellsInColumn = row.children[columnIndex];
+                            if (cellsInColumn) {
+                                cellsInColumn.classList.remove('column-highlight');
+                            }
+                        });
+                    });
+                });
+            });
+        }
+        
+        // Initialize column hover listeners
+        addColumnHoverListeners();
+        
+        // Add event listeners for dynamic analysis controls
+        document.getElementById('dynamic-return').addEventListener('change', updateDynamicAnalysis);
+        document.getElementById('dynamic-loss').addEventListener('change', updateDynamicAnalysis);
+        document.getElementById('dynamic-cap-risk').addEventListener('input', updateDynamicAnalysis);
+        document.getElementById('dynamic-cap-risk').addEventListener('blur', updateDynamicAnalysis);
+        document.getElementById('dynamic-kelly-flex').addEventListener('input', updateDynamicAnalysis);
+        
+        // Add event listeners for save/load functionality
+        document.getElementById('save-config').addEventListener('click', saveConfiguration);
+        document.getElementById('load-selected').addEventListener('click', loadConfiguration);
+        
+        // Add event listener for toggle view
+        document.getElementById('toggle-view').addEventListener('click', toggleTradeView);
+        
+        // Add reset function for debugging
+        function resetToConsolidatedView() {
+            isExpandedView = false;
+            const toggleButton = document.getElementById('toggle-view');
+            const viewMode = document.getElementById('view-mode');
+            
+            toggleButton.textContent = 'Expand Trades';
+            toggleButton.classList.remove('primary');
+            toggleButton.classList.add('secondary');
+            viewMode.textContent = 'Consolidated View';
+            
+            // Rebuild table in consolidated view
+            tableBody.innerHTML = '';
+            tradeData.forEach((data, index) => createRow(data, index));
+            attachEventListeners();
+            calculateAll();
+        }
+        
+        // Add comma formatting for dynamic capital at risk input
+        document.getElementById('dynamic-cap-risk').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                e.target.value = parseInt(value).toLocaleString();
+            }
+        });
+        
+        document.getElementById('dynamic-cap-risk').addEventListener('blur', function(e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                e.target.value = parseInt(value).toLocaleString();
+            }
+        });
+        
+        
+        // Add comma formatting for Capital at Risk input
+        document.getElementById('cap-risk').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                e.target.value = parseInt(value).toLocaleString();
+            }
+        });
+        
+        document.getElementById('cap-risk').addEventListener('blur', function(e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (!isNaN(value) && value !== '') {
+                e.target.value = parseInt(value).toLocaleString();
+            }
+        });
+
+        function updateCharts(calculations) {
+            updatePnLChart(calculations);
+            updateAllocationChart(calculations);
+            updateSlippageChart(calculations);
+            updateKellyFlexChart(calculations);
+            updateCombinedAnalysisTable(calculations);
+            updateReturnLossSensitivity();
+            updatePositionSizeSensitivity();
+            updateDynamicAnalysis();
+            
+            // Re-add column hover listeners after table updates
+            setTimeout(() => {
+                addColumnHoverListeners();
+            }, 100);
+        }
+
+        function updatePnLChart(calculations) {
+            const ctx = document.getElementById('pnl-chart').getContext('2d');
+            if (charts.pnlChart) charts.pnlChart.destroy();
+            
+            const pnlData = calculations.map(calc => calc.expPnl);
+            const labels = calculations.map(calc => `${calc.type} (${calc.trades})`);
+            
+            charts.pnlChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Expected PnL',
+                        data: pnlData,
+                        backgroundColor: pnlData.map(val => val > 0 ? '#10b981' : '#ef4444'),
+                        borderColor: pnlData.map(val => val > 0 ? '#059669' : '#dc2626'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+        }
+
+        function updateAllocationChart(calculations) {
+            const ctx = document.getElementById('allocation-chart').getContext('2d');
+            if (charts.allocationChart) charts.allocationChart.destroy();
+            
+            const typeAllocations = {};
+            calculations.forEach(calc => {
+                typeAllocations[calc.type] = (typeAllocations[calc.type] || 0) + calc.capAtRisk;
+            });
+            
+            const colors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+            const labels = Object.keys(typeAllocations);
+            const data = Object.values(typeAllocations);
+            
+            charts.allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: '#ffffff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const value = data.datasets[0].data[i];
+                                            return {
+                                                text: `${label}: $${value.toLocaleString()}`,
+                                                fillStyle: data.datasets[0].backgroundColor[i],
+                                                strokeStyle: data.datasets[0].borderColor,
+                                                lineWidth: data.datasets[0].borderWidth,
+                                                hidden: false,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+        }
+
+        function updateKellyFlexChart(calculations) {
+            const ctx = document.getElementById('kelly-flex-chart').getContext('2d');
+            if (charts.kellyFlexChart) charts.kellyFlexChart.destroy();
+            
+            const pnlData = [];
+            const labels = [];
+            
+            for (let flex = 25; flex <= 100; flex += 5) {
+                const flexRate = flex / 100;
+                let totalPnL = 0;
+                
+                calculations.forEach(calc => {
+                    const adjKelly = calc.kellyRatio * flexRate;
+                    const capRisk = (parseFloat(document.getElementById('cap-risk').value.replace(/,/g, '')) || 0) * adjKelly * calc.trades;
+                    const posSize = capRisk / (calc.loss > 0 ? calc.loss : 1);
+                    const expectedEdge = (calc.prob * calc.win) - ((1 - calc.prob) * calc.loss);
+                    const expPnl = posSize * expectedEdge;
+                    
+                    totalPnL += expPnl;
+                });
+                
+                labels.push(`${flex}%`);
+                pnlData.push(totalPnL * 1000); // Show full amounts
+            }
+            
+            charts.kellyFlexChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Expected PnL ($)',
+                        data: pnlData,
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Expected PnL: $${(context.parsed.y * 1000).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Kelly Flex %'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Expected PnL ($)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toFixed(0) + 'k';
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+        }
+
+        function updateCombinedAnalysisTable(calculations) {
+            const combinedAnalysisTableBody = document.getElementById('combined-analysis-table-body');
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value) / 100;
+            const capRisk = parseFloat(document.getElementById('cap-risk').value.replace(/,/g, '')) || 0;
+            
+            let combinedHtml = '';
+            
+            calculations.forEach(calc => {
+                const percentReturn = (calc.win * 100).toFixed(1);
+                const percentLoss = (calc.loss * 100).toFixed(1);
+                const winLossRatio = calc.loss > 0 ? (calc.win / calc.loss).toFixed(2) : 'N/A';
+                const probability = (calc.prob * 100).toFixed(0);
+                const kellyRatio = (calc.kellyRatio * 100).toFixed(0);
+                
+                // Calculate edge: (prob * win) - ((1 - prob) * loss)
+                const edge = (calc.prob * calc.win) - ((1 - calc.prob) * calc.loss);
+                const edgePercent = (edge * 100).toFixed(0);
+                
+                const adjKelly = calc.kellyRatio * kellyFlex;
+                const capAtRisk = capRisk * adjKelly * calc.trades;
+                const posSize = calc.loss > 0 ? capAtRisk / calc.loss : 0;
+                const avgPosition = calc.trades > 0 ? posSize / calc.trades : 0;
+                
+                const expectedEdge = (calc.prob * calc.win) - ((1 - calc.prob) * calc.loss);
+                const expPnl = posSize * expectedEdge;
+                
+                combinedHtml += `
+                    <tr>
+                        <td>${calc.type}</td>
+                        <td>${percentReturn}%</td>
+                        <td>${percentLoss}%</td>
+                        <td>${winLossRatio}</td>
+                        <td>${probability}%</td>
+                        <td>${kellyRatio}%</td>
+                        <td class="${edge >= 0 ? 'positive' : 'negative'}">${edgePercent}%</td>
+                        <td>$${avgPosition.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td>$${expPnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                    </tr>
+                `;
+            });
+            
+            combinedAnalysisTableBody.innerHTML = combinedHtml;
+        }
+
+        function updateReturnLossSensitivity() {
+            const returnLossSensitivityBody = document.getElementById('return-loss-sensitivity-body');
+            let sensitivityHtml = '';
+            
+            // Generate rows for % Loss from 1% to 10% in 1% increments
+            for (let lossPct = 1; lossPct <= 10; lossPct++) {
+                let rowHtml = `<tr><td>${lossPct}%</td>`;
+                
+                // Generate columns for % Return (2%, 3%, 4%, 5%, 6%, 7%, 8%, 9%, 10%, 12%, 15%, 20%)
+                const returnPcts = [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20];
+                
+                returnPcts.forEach(returnPct => {
+                    const winLossRatio = (returnPct / 100) / (lossPct / 100);
+                    if (winLossRatio > 1.00) {
+                        rowHtml += `<td class="clickable-cell" data-wl-ratio="${winLossRatio.toFixed(1)}">${winLossRatio.toFixed(2)}</td>`;
+                    } else {
+                        rowHtml += `<td class="empty-cell">-</td>`;
+                    }
+                });
+                
+                rowHtml += '</tr>';
+                sensitivityHtml += rowHtml;
+            }
+            
+            returnLossSensitivityBody.innerHTML = sensitivityHtml;
+            
+            // Add click listeners for cross-table highlighting
+            document.querySelectorAll('#return-loss-sensitivity-body .clickable-cell').forEach(cell => {
+                cell.addEventListener('click', function() {
+                    const wlRatio = parseFloat(this.getAttribute('data-wl-ratio'));
+                    
+                    // Remove previous highlights
+                    document.querySelectorAll('.row-highlight').forEach(row => {
+                        row.classList.remove('row-highlight');
+                    });
+                    
+                    // Find the closest W/L ratio in Position Size Sensitivity table
+                    const positionRows = document.querySelectorAll('#position-size-sensitivity-body tr[data-wl-ratio]');
+                    let closestRow = null;
+                    let minDiff = Infinity;
+                    
+                    positionRows.forEach(row => {
+                        const rowWlRatio = parseFloat(row.getAttribute('data-wl-ratio'));
+                        const diff = Math.abs(wlRatio - rowWlRatio);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestRow = row;
+                        }
+                    });
+                    
+                    // Highlight the closest row
+                    if (closestRow) {
+                        closestRow.classList.add('row-highlight');
+                    }
+                });
+            });
+        }
+
+        function updatePositionSizeSensitivity() {
+            const positionSizeSensitivityBody = document.getElementById('position-size-sensitivity-body');
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value) / 100;
+            const capRisk = parseFloat(document.getElementById('cap-risk').value.replace(/,/g, '')) || 0;
+            
+            let sensitivityHtml = '';
+            
+            // Updated W/L ratios: 0.25 increments from 1.0 to 4.0
+            const wlRatios = [];
+            for (let i = 1.0; i <= 4.0; i += 0.25) {
+                wlRatios.push(Math.round(i * 100) / 100); // Round to avoid floating point issues
+            }
+            const probabilities = [0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80];
+            
+            wlRatios.forEach(ratio => {
+                let rowHtml = `<tr data-wl-ratio="${ratio.toFixed(2)}"><td>${ratio.toFixed(2)}</td>`;
+                
+                probabilities.forEach(prob => {
+                    // Calculate Kelly ratio: ((b * p) - q) / b where b = win/loss ratio, p = probability, q = 1-p
+                    const q = 1 - prob;
+                    const kellyRatio = ((ratio * prob) - q) / ratio;
+                    const safeKellyRatio = Math.max(0, kellyRatio);
+                    
+                    // Calculate position size
+                    const adjKelly = safeKellyRatio * kellyFlex;
+                    const capAtRisk = capRisk * adjKelly;
+                    const lossPct = 0.02; // Assume 2% loss for position size calculation
+                    const posSize = capAtRisk / lossPct;
+                    const avgPosition = posSize; // Single trade assumption
+                    
+                    rowHtml += `<td>$${avgPosition.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>`;
+                });
+                
+                rowHtml += '</tr>';
+                sensitivityHtml += rowHtml;
+            });
+            
+            positionSizeSensitivityBody.innerHTML = sensitivityHtml;
+        }
+
+        function updateDynamicAnalysis() {
+            const dynamicAnalysisBody = document.getElementById('dynamic-analysis-body');
+            const kellyFlex = parseFloat(document.getElementById('dynamic-kelly-flex').value) / 100;
+            const capRisk = parseFloat(document.getElementById('dynamic-cap-risk').value.replace(/,/g, '')) || 0;
+            
+            // Get selected return and loss values
+            const selectedReturn = parseFloat(document.getElementById('dynamic-return').value);
+            const selectedLoss = parseFloat(document.getElementById('dynamic-loss').value);
+            
+            // Calculate win/loss ratio
+            const winLossRatio = selectedReturn / selectedLoss;
+            
+            // Generate probabilities from 30% to 90% in 5% increments
+            const probabilities = [];
+            for (let prob = 30; prob <= 90; prob += 5) {
+                probabilities.push(prob / 100);
+            }
+            
+            let analysisHtml = '';
+            
+            probabilities.forEach(prob => {
+                // Calculate Kelly ratio: ((b * p) - q) / b where b = win/loss ratio, p = probability, q = 1-p
+                const q = 1 - prob;
+                const kellyRatio = ((winLossRatio * prob) - q) / winLossRatio;
+                const safeKellyRatio = Math.max(0, kellyRatio);
+                
+                // Calculate adjusted Kelly
+                const adjKelly = safeKellyRatio * kellyFlex;
+                
+                // Calculate capital at risk: Kelly percentage of total capital
+                const capAtRisk = capRisk * adjKelly;
+                
+                // Calculate position size: capital at risk divided by loss percentage
+                const posSize = capAtRisk / (selectedLoss / 100);
+                
+                // Calculate expected PnL
+                const expectedEdge = (prob * (selectedReturn / 100)) - ((1 - prob) * (selectedLoss / 100));
+                const expPnl = posSize * expectedEdge;
+                
+                // Color coding for Kelly ratio
+                let kellyClass = '';
+                if (safeKellyRatio > 0.2) kellyClass = 'positive';
+                else if (safeKellyRatio > 0.1) kellyClass = 'warning';
+                else if (safeKellyRatio > 0) kellyClass = 'negative';
+                
+                analysisHtml += `
+                    <tr>
+                        <td>${(prob * 100).toFixed(0)}%</td>
+                        <td class="${kellyClass}">${(safeKellyRatio * 100).toFixed(1)}%</td>
+                        <td>${(adjKelly * 100).toFixed(1)}%</td>
+                        <td>$${posSize.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td>$${capAtRisk.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td class="${expPnl >= 0 ? 'positive' : 'negative'}">$${expPnl.toLocaleString(undefined, { maximumFractionDigits: 0 })}</td>
+                        <td>${winLossRatio.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            dynamicAnalysisBody.innerHTML = analysisHtml;
+            
+            // Show math example
+            updateMathExample(selectedReturn, selectedLoss, capRisk, kellyFlex);
+        }
+
+        function updateMathExample(selectedReturn, selectedLoss, capRisk, kellyFlex) {
+            const mathExample = document.getElementById('math-example');
+            const mathSteps = document.getElementById('math-steps');
+            
+            // Calculate win/loss ratio
+            const winLossRatio = selectedReturn / selectedLoss;
+            
+            // Use 70% probability for the example
+            const prob = 0.70;
+            const q = 1 - prob;
+            
+            // Calculate Kelly ratio
+            const kellyRatio = ((winLossRatio * prob) - q) / winLossRatio;
+            const safeKellyRatio = Math.max(0, kellyRatio);
+            const adjKelly = safeKellyRatio * kellyFlex;
+            
+            // Calculate position sizing
+            const capAtRisk = capRisk * adjKelly;
+            const posSize = capAtRisk / (selectedLoss / 100);
+            
+            // Calculate expected PnL
+            const expectedEdge = (prob * (selectedReturn / 100)) - ((1 - prob) * (selectedLoss / 100));
+            const expPnl = posSize * expectedEdge;
+            
+            const mathHtml = `
+                <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 16px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <div style="background: #0ea5e9; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">📊</div>
+                        <strong style="color: #0c4a6e; font-size: 16px;">Given Parameters</strong>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; color: #0c4a6e;">
+                        <div>• Expected Return: <span style="color: #059669; font-weight: 600;">${selectedReturn}%</span></div>
+                        <div>• Expected Loss: <span style="color: #dc2626; font-weight: 600;">${selectedLoss}%</span></div>
+                        <div>• Total Capital: <span style="color: #7c3aed; font-weight: 600;">$${capRisk.toLocaleString()}</span></div>
+                        <div>• Kelly Flex: <span style="color: #ea580c; font-weight: 600;">${(kellyFlex * 100).toFixed(0)}%</span></div>
+                        <div>• Win Probability: <span style="color: #059669; font-weight: 600;">70%</span></div>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">1</div>
+                        <strong style="color: #92400e; font-size: 16px;">Calculate Win/Loss Ratio</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <code style="color: #92400e; font-size: 15px;">W/L Ratio = Return ÷ Loss = ${selectedReturn}% ÷ ${selectedLoss}% = <span style="color: #059669; font-weight: bold;">${winLossRatio.toFixed(2)}</span></code>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">2</div>
+                        <strong style="color: #92400e; font-size: 16px;">Calculate Kelly Ratio</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 8px;">Kelly = ((W/L × Prob) - (1-Prob)) ÷ W/L</div>
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 4px;">Kelly = ((${winLossRatio.toFixed(2)} × 0.70) - 0.30) ÷ ${winLossRatio.toFixed(2)}</div>
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 4px;">Kelly = (${(winLossRatio * prob).toFixed(3)} - 0.30) ÷ ${winLossRatio.toFixed(2)}</div>
+                        <div style="color: #92400e; font-size: 14px;">Kelly = ${(winLossRatio * prob - q).toFixed(3)} ÷ ${winLossRatio.toFixed(2)} = <span style="color: #059669; font-weight: bold;">${(safeKellyRatio * 100).toFixed(1)}%</span></div>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">3</div>
+                        <strong style="color: #92400e; font-size: 16px;">Apply Kelly Flex</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <code style="color: #92400e; font-size: 15px;">Adj Kelly = Kelly × Flex = ${(safeKellyRatio * 100).toFixed(1)}% × ${(kellyFlex * 100).toFixed(0)}% = <span style="color: #059669; font-weight: bold;">${(adjKelly * 100).toFixed(1)}%</span></code>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">4</div>
+                        <strong style="color: #92400e; font-size: 16px;">Calculate Capital at Risk</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <code style="color: #92400e; font-size: 15px;">Cap @ Risk = Total Capital × Adj Kelly = $${capRisk.toLocaleString()} × ${(adjKelly * 100).toFixed(1)}% = <span style="color: #dc2626; font-weight: bold;">$${capAtRisk.toLocaleString()}</span></code>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 16px; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">5</div>
+                        <strong style="color: #92400e; font-size: 16px;">Calculate Position Size</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <code style="color: #92400e; font-size: 15px;">Position Size = Cap @ Risk ÷ Loss% = $${capAtRisk.toLocaleString()} ÷ ${selectedLoss}% = <span style="color: #7c3aed; font-weight: bold;">$${posSize.toLocaleString()}</span></code>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 0; border-radius: 0 8px 8px 0;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <div style="background: #f59e0b; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; margin-right: 8px;">6</div>
+                        <strong style="color: #92400e; font-size: 16px;">Calculate Expected PnL</strong>
+                    </div>
+                    <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #fbbf24;">
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 8px;">Edge = (Prob × Return) - ((1-Prob) × Loss)</div>
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 4px;">Edge = (0.70 × ${selectedReturn}%) - (0.30 × ${selectedLoss}%)</div>
+                        <div style="color: #92400e; font-size: 14px; margin-bottom: 8px;">Edge = ${(prob * selectedReturn / 100).toFixed(3)} - ${((1-prob) * selectedLoss / 100).toFixed(3)} = <span style="color: #059669; font-weight: bold;">${expectedEdge.toFixed(3)}</span></div>
+                        <div style="color: #92400e; font-size: 14px;">Expected PnL = Position Size × Edge = $${posSize.toLocaleString()} × ${expectedEdge.toFixed(3)} = <span style="color: #059669; font-weight: bold;">$${expPnl.toLocaleString()}</span></div>
+                    </div>
+                </div>
+            `;
+            
+            mathSteps.innerHTML = mathHtml;
+            mathExample.style.display = 'block';
+        }
+
+        function saveConfiguration() {
+            const configName = document.getElementById('save-name').value.trim();
+            if (!configName) {
+                alert('Please enter a name for the configuration');
+                return;
+            }
+            
+            // Collect current state
+            const config = {
+                name: configName,
+                timestamp: new Date().toISOString(),
+                globalSettings: {
+                    capRisk: document.getElementById('cap-risk').value,
+                    kellyFlex: document.getElementById('kelly-flex').value
+                },
+                tradeData: [...tradeData],
+                dynamicSettings: {
+                    return: document.getElementById('dynamic-return').value,
+                    loss: document.getElementById('dynamic-loss').value,
+                    capRisk: document.getElementById('dynamic-cap-risk').value,
+                    kellyFlex: document.getElementById('dynamic-kelly-flex').value
+                }
+            };
+            
+            // Save to localStorage
+            const savedConfigs = JSON.parse(localStorage.getItem('kellyConfigs') || '{}');
+            savedConfigs[configName] = config;
+            localStorage.setItem('kellyConfigs', JSON.stringify(savedConfigs));
+            
+            // Update load dropdown
+            updateLoadDropdown();
+            
+            // Clear save name
+            document.getElementById('save-name').value = '';
+            
+            // Show success message
+            alert(`Configuration "${configName}" saved successfully!`);
+        }
+
+        function loadConfiguration() {
+            const selectedConfig = document.getElementById('load-config').value;
+            if (!selectedConfig) {
+                alert('Please select a configuration to load');
+                return;
+            }
+            
+            const savedConfigs = JSON.parse(localStorage.getItem('kellyConfigs') || '{}');
+            const config = savedConfigs[selectedConfig];
+            
+            if (!config) {
+                alert('Configuration not found');
+                return;
+            }
+            
+            // Load global settings
+            document.getElementById('cap-risk').value = config.globalSettings.capRisk;
+            document.getElementById('kelly-flex').value = config.globalSettings.kellyFlex;
+            
+            // Load trade data
+            tradeData = [...config.tradeData];
+            refreshTable();
+            
+            // Load dynamic settings
+            document.getElementById('dynamic-return').value = config.dynamicSettings.return;
+            document.getElementById('dynamic-loss').value = config.dynamicSettings.loss;
+            document.getElementById('dynamic-cap-risk').value = config.dynamicSettings.capRisk;
+            document.getElementById('dynamic-kelly-flex').value = config.dynamicSettings.kellyFlex;
+            
+            // Recalculate everything
+            calculateAll();
+            updateDynamicAnalysis();
+            
+            alert(`Configuration "${selectedConfig}" loaded successfully!`);
+        }
+
+        function updateLoadDropdown() {
+            const savedConfigs = JSON.parse(localStorage.getItem('kellyConfigs') || '{}');
+            const loadSelect = document.getElementById('load-config');
+            
+            // Clear existing options
+            loadSelect.innerHTML = '<option value="">Select saved config...</option>';
+            
+            // Add saved configurations
+            Object.keys(savedConfigs).forEach(configName => {
+                const config = savedConfigs[configName];
+                const option = document.createElement('option');
+                option.value = configName;
+                option.textContent = `${configName} (${new Date(config.timestamp).toLocaleDateString()})`;
+                loadSelect.appendChild(option);
+            });
+        }
+
+        // Initialize load dropdown on page load
+        updateLoadDropdown();
+
+
+        // Row management functions
+        function addTrade() {
+            const newTrade = { type: "New Issue", trades: 1, win: 2.0, loss: 1.5, prob: 70, kellyRatio: 75 };
+            tradeData.push(newTrade);
+            refreshTable();
+        }
+
+        function duplicateSelected() {
+            const selected = getSelectedRows();
+            if (selected.length === 0) {
+                alert('Please select at least one row to duplicate.');
+                return;
+            }
+            
+            selected.forEach(index => {
+                const originalData = getRowData(index);
+                tradeData.push(originalData);
+            });
+            refreshTable();
+        }
+
+        function deleteSelected() {
+            const selected = getSelectedRows();
+            if (selected.length === 0) {
+                alert('Please select at least one row to delete.');
+                return;
+            }
+            
+            // Sort in descending order to delete from end to avoid index issues
+            selected.sort((a, b) => b - a);
+            selected.forEach(index => {
+                tradeData.splice(index, 1);
+            });
+            refreshTable();
+        }
+
+        function getSelectedRows() {
+            const checkboxes = document.querySelectorAll('.row-select:checked');
+            return Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+        }
+
+        function getRowData(index) {
+            const row = document.getElementById(`row-${index}`);
+            return {
+                type: row.querySelector('.type-input').value,
+                trades: parseInt(row.querySelector('.trades-input').value),
+                win: parseFloat(row.querySelector('.win-input').value),
+                loss: parseFloat(row.querySelector('.loss-input').value),
+                prob: parseFloat(row.querySelector('.prob-input').value),
+                kellyRatio: parseFloat(row.querySelector('.kelly-ratio-input').value)
+            };
+        }
+
+        function refreshTable() {
+            tableBody.innerHTML = '';
+            if (isExpandedView) {
+                // Expand trades into individual rows based on current table state
+                let expandedIndex = 0;
+                tradeData.forEach((data, index) => {
+                    const numTrades = data.trades || 1;
+                    for (let i = 0; i < numTrades; i++) {
+                        const expandedData = {
+                            ...data,
+                            trades: 1, // Each expanded row represents 1 trade
+                            originalIndex: index,
+                            tradeNumber: i + 1,
+                            originalType: data.type // Preserve original type for calculations
+                        };
+                        createRow(expandedData, expandedIndex);
+                        expandedIndex++;
+                    }
+                });
+            } else {
+                // Show consolidated view
+                tradeData.forEach((data, index) => createRow(data, index));
+            }
+            attachEventListeners();
+            calculateAll();
+        }
+
+        function expandCurrentTrades() {
+            // Get current table state and expand based on actual trade counts
+            const rows = tableBody.querySelectorAll('tr');
+            const currentTrades = [];
+            
+            rows.forEach(row => {
+                const type = row.querySelector('.type-input').value;
+                const trades = parseInt(row.querySelector('.trades-input').value) || 1;
+                const win = parseFloat(row.querySelector('.win-input').value);
+                const loss = parseFloat(row.querySelector('.loss-input').value);
+                const prob = parseFloat(row.querySelector('.prob-input').value);
+                
+                currentTrades.push({
+                    type: type,
+                    trades: trades,
+                    win: win,
+                    loss: loss,
+                    prob: prob
+                });
+            });
+            
+            // Update tradeData with current state
+            tradeData = [...currentTrades];
+            
+            // Clear table and expand
+            tableBody.innerHTML = '';
+            let expandedIndex = 0;
+            tradeData.forEach((data, index) => {
+                const numTrades = data.trades || 1;
+                for (let i = 0; i < numTrades; i++) {
+                    const expandedData = {
+                        ...data,
+                        trades: 1,
+                        originalIndex: index,
+                        tradeNumber: i + 1,
+                        originalType: data.type
+                    };
+                    createRow(expandedData, expandedIndex);
+                    expandedIndex++;
+                }
+            });
+            attachEventListeners();
+            calculateAll();
+        }
+
+        function toggleTradeView() {
+            console.log('Toggle clicked. Current isExpandedView:', isExpandedView);
+            
+            if (isExpandedView) {
+                // Currently expanded, so consolidate
+                console.log('Consolidating...');
+                consolidateExpandedTrades();
+            } else {
+                // Currently consolidated, so expand
+                console.log('Expanding...');
+                expandCurrentTrades();
+            }
+            
+            // Toggle the state
+            isExpandedView = !isExpandedView;
+            console.log('New isExpandedView:', isExpandedView);
+            
+            // Update UI
+            const toggleButton = document.getElementById('toggle-view');
+            const viewMode = document.getElementById('view-mode');
+            
+            if (isExpandedView) {
+                toggleButton.textContent = 'Consolidate Trades';
+                toggleButton.classList.remove('secondary');
+                toggleButton.classList.add('primary');
+                viewMode.textContent = 'Expanded View';
+            } else {
+                toggleButton.textContent = 'Expand Trades';
+                toggleButton.classList.remove('primary');
+                toggleButton.classList.add('secondary');
+                viewMode.textContent = 'Consolidated View';
+            }
+        }
+
+        function consolidateExpandedTrades() {
+            // Get all current rows and group them by original trade type
+            const rows = tableBody.querySelectorAll('tr');
+            const groupedTrades = {};
+            
+            rows.forEach(row => {
+                const currentType = row.querySelector('.type-input').value;
+                const trades = parseInt(row.querySelector('.trades-input').value) || 1;
+                const win = parseFloat(row.querySelector('.win-input').value);
+                const loss = parseFloat(row.querySelector('.loss-input').value);
+                const prob = parseFloat(row.querySelector('.prob-input').value);
+                
+                // Extract base type from current type (remove #1, #2, etc.)
+                const groupKey = currentType.replace(/\s*#\d+$/, '');
+                
+                if (!groupedTrades[groupKey]) {
+                    groupedTrades[groupKey] = {
+                        type: groupKey,
+                        trades: 0,
+                        win: win,
+                        loss: loss,
+                        prob: prob
+                    };
+                }
+                
+                groupedTrades[groupKey].trades += trades;
+            });
+            
+            // Update tradeData with consolidated trades
+            tradeData = Object.values(groupedTrades);
+            
+            // Clear table and rebuild in consolidated view
+            tableBody.innerHTML = '';
+            tradeData.forEach((data, index) => createRow(data, index));
+            attachEventListeners();
+            calculateAll();
+        }
+
+        function attachEventListeners() {
+            document.querySelectorAll("input, select").forEach((element) => {
+                element.removeEventListener("input", calculateAll);
+                element.addEventListener("input", calculateAll);
+            });
+            
+            // Add keyboard navigation
+            addKeyboardNavigation();
+        }
+        
+        function addKeyboardNavigation() {
+            const table = document.getElementById("trade-table-body");
+            if (!table) return;
+            
+            // Remove existing listeners to avoid duplicates
+            table.removeEventListener('keydown', handleKeyboardNavigation);
+            table.addEventListener('keydown', handleKeyboardNavigation);
+            
+            // Make all input elements focusable
+            const inputs = table.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.setAttribute('tabindex', '0');
+            });
+        }
+        
+        function handleKeyboardNavigation(e) {
+            const currentElement = e.target;
+            if (!currentElement.matches('input, select')) return;
+            
+            const table = document.getElementById("trade-table-body");
+            const allInputs = Array.from(table.querySelectorAll('input, select'));
+            const currentIndex = allInputs.indexOf(currentElement);
+            
+            if (currentIndex === -1) return;
+            
+            const rows = table.querySelectorAll('tr');
+            const currentRow = currentElement.closest('tr');
+            const currentRowIndex = Array.from(rows).indexOf(currentRow);
+            const currentCell = currentElement.closest('td');
+            const currentCellIndex = Array.from(currentRow.children).indexOf(currentCell);
+            
+            let targetElement = null;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (currentRowIndex > 0) {
+                        const targetRow = rows[currentRowIndex - 1];
+                        const targetCell = targetRow.children[currentCellIndex];
+                        targetElement = targetCell.querySelector('input, select');
+                    }
+                    break;
+                    
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (currentRowIndex < rows.length - 1) {
+                        const targetRow = rows[currentRowIndex + 1];
+                        const targetCell = targetRow.children[currentCellIndex];
+                        targetElement = targetCell.querySelector('input, select');
+                    }
+                    break;
+                    
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (currentIndex > 0) {
+                        targetElement = allInputs[currentIndex - 1];
+                    }
+                    break;
+                    
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (currentIndex < allInputs.length - 1) {
+                        targetElement = allInputs[currentIndex + 1];
+                    }
+                    break;
+            }
+            
+            if (targetElement) {
+                targetElement.focus();
+                if (targetElement.type === 'text' || targetElement.type === 'number') {
+                    targetElement.select();
+                }
+            }
+        }
+
+        // Event listeners for buttons
+        document.getElementById('add-trade').addEventListener('click', addTrade);
+        document.getElementById('duplicate-selected').addEventListener('click', duplicateSelected);
+        document.getElementById('delete-selected').addEventListener('click', deleteSelected);
+        
+        // Initial event listeners setup
+        attachEventListeners();
+    </script>
+</body>
+</html>
+
