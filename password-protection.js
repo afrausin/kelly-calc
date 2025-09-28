@@ -202,6 +202,12 @@
     
     // Show password prompt
     function showPasswordPrompt() {
+        // Remove the hiding CSS since we're showing the modal
+        const hideStyle = document.getElementById('password-protection-hide');
+        if (hideStyle) {
+            hideStyle.remove();
+        }
+        
         // Hide the main content
         const mainContent = document.body.children;
         for (let i = 0; i < mainContent.length; i++) {
@@ -225,7 +231,11 @@
             if (enteredPassword === PASSWORD) {
                 setAuthenticated();
                 modal.remove();
-                // Show main content
+                // Remove any hiding CSS and show main content
+                const hideStyle = document.getElementById('password-protection-hide');
+                if (hideStyle) {
+                    hideStyle.remove();
+                }
                 const mainContent = document.body.children;
                 for (let i = 0; i < mainContent.length; i++) {
                     mainContent[i].style.display = '';
@@ -267,10 +277,35 @@
         });
     }
     
+    // Add immediate hiding CSS to prevent flash
+    function addImmediateHideCSS() {
+        const style = document.createElement('style');
+        style.id = 'password-protection-hide';
+        style.textContent = `
+            body > *:not(#password-modal) {
+                display: none !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
     // Initialize password protection
     function initPasswordProtection() {
+        // Add CSS to hide content immediately
+        addImmediateHideCSS();
+        
         if (!isAuthenticated()) {
             showPasswordPrompt();
+        } else {
+            // If authenticated, show content and remove hiding CSS
+            const hideStyle = document.getElementById('password-protection-hide');
+            if (hideStyle) {
+                hideStyle.remove();
+            }
+            const mainContent = document.body.children;
+            for (let i = 0; i < mainContent.length; i++) {
+                mainContent[i].style.display = '';
+            }
         }
     }
     
