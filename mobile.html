@@ -124,6 +124,72 @@
             box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.15);
         }
 
+        /* Wheel Picker Styles */
+        .wheel-picker-container {
+            position: relative;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: #fff;
+            height: 180px;
+            overflow: hidden;
+            touch-action: pan-y;
+        }
+
+        .wheel-picker {
+            position: relative;
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .wheel-picker::-webkit-scrollbar {
+            display: none;
+        }
+
+        .wheel-picker-option {
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--muted);
+            scroll-snap-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .wheel-picker-option.selected {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 20px;
+            transform: scale(1.1);
+        }
+
+        .wheel-picker-highlight {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 36px;
+            transform: translateY(-50%);
+            background: linear-gradient(180deg, 
+                rgba(0, 120, 212, 0.05) 0%, 
+                rgba(0, 120, 212, 0.1) 50%, 
+                rgba(0, 120, 212, 0.05) 100%);
+            border-top: 2px solid var(--primary);
+            border-bottom: 2px solid var(--primary);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .wheel-picker-spacer {
+            height: 72px;
+        }
+
         .table-container {
             overflow-x: auto;
             border-radius: var(--radius);
@@ -378,43 +444,17 @@
             <div class="controls">
                 <div class="control">
                     <label for="dynamic-return">Expected Return %</label>
-                    <select id="dynamic-return">
-                        <option value="1">1%</option>
-                        <option value="2">2%</option>
-                        <option value="3">3%</option>
-                        <option value="4">4%</option>
-                        <option value="5" selected>5%</option>
-                        <option value="6">6%</option>
-                        <option value="7">7%</option>
-                        <option value="8">8%</option>
-                        <option value="9">9%</option>
-                        <option value="10">10%</option>
-                        <option value="12">12%</option>
-                        <option value="15">15%</option>
-                        <option value="20">20%</option>
-                        <option value="25">25%</option>
-                        <option value="30">30%</option>
-                    </select>
+                    <div class="wheel-picker-container">
+                        <div class="wheel-picker-highlight"></div>
+                        <div class="wheel-picker" id="dynamic-return"></div>
+                    </div>
                 </div>
                 <div class="control">
                     <label for="dynamic-loss">Expected Loss %</label>
-                    <select id="dynamic-loss">
-                        <option value="0.5">0.5%</option>
-                        <option value="1">1%</option>
-                        <option value="1.5">1.5%</option>
-                        <option value="2">2%</option>
-                        <option value="2.5" selected>2.5%</option>
-                        <option value="3">3%</option>
-                        <option value="4">4%</option>
-                        <option value="5">5%</option>
-                        <option value="6">6%</option>
-                        <option value="7">7%</option>
-                        <option value="8">8%</option>
-                        <option value="10">10%</option>
-                        <option value="12">12%</option>
-                        <option value="15">15%</option>
-                        <option value="20">20%</option>
-                    </select>
+                    <div class="wheel-picker-container">
+                        <div class="wheel-picker-highlight"></div>
+                        <div class="wheel-picker" id="dynamic-loss"></div>
+                    </div>
                 </div>
                 <div class="control">
                     <label for="dynamic-cap-risk">Capital at Risk</label>
@@ -454,9 +494,152 @@
     </div>
 
     <script>
-        // Add event listeners for dynamic analysis controls
-        document.getElementById('dynamic-return').addEventListener('change', updateDynamicAnalysis);
-        document.getElementById('dynamic-loss').addEventListener('change', updateDynamicAnalysis);
+        // Wheel Picker Implementation
+        class WheelPicker {
+            constructor(elementId, minValue, maxValue, step, defaultValue) {
+                this.element = document.getElementById(elementId);
+                this.minValue = minValue;
+                this.maxValue = maxValue;
+                this.step = step;
+                this.currentValue = defaultValue;
+                this.options = [];
+                this.isScrolling = false;
+                this.scrollTimeout = null;
+                
+                this.generateOptions();
+                this.render();
+                this.attachListeners();
+                this.scrollToValue(this.currentValue);
+            }
+            
+            generateOptions() {
+                for (let value = this.minValue; value <= this.maxValue; value += this.step) {
+                    // Round to avoid floating point issues
+                    const roundedValue = Math.round(value * 100) / 100;
+                    this.options.push(roundedValue);
+                }
+            }
+            
+            render() {
+                let html = '<div class="wheel-picker-spacer"></div>';
+                this.options.forEach((value, index) => {
+                    const displayValue = value % 1 === 0 ? `${value}%` : `${value.toFixed(1)}%`;
+                    html += `<div class="wheel-picker-option" data-value="${value}" data-index="${index}">${displayValue}</div>`;
+                });
+                html += '<div class="wheel-picker-spacer"></div>';
+                this.element.innerHTML = html;
+            }
+            
+            attachListeners() {
+                this.element.addEventListener('scroll', () => {
+                    this.handleScroll();
+                });
+                
+                // Click to scroll to option
+                this.element.querySelectorAll('.wheel-picker-option').forEach(option => {
+                    option.addEventListener('click', (e) => {
+                        const value = parseFloat(e.target.dataset.value);
+                        this.scrollToValue(value);
+                    });
+                });
+            }
+            
+            handleScroll() {
+                this.isScrolling = true;
+                clearTimeout(this.scrollTimeout);
+                
+                this.scrollTimeout = setTimeout(() => {
+                    this.isScrolling = false;
+                    this.snapToNearest();
+                }, 100);
+                
+                this.updateSelection();
+            }
+            
+            updateSelection() {
+                const containerRect = this.element.getBoundingClientRect();
+                const centerY = containerRect.top + containerRect.height / 2;
+                
+                let closestOption = null;
+                let closestDistance = Infinity;
+                
+                this.element.querySelectorAll('.wheel-picker-option').forEach(option => {
+                    const rect = option.getBoundingClientRect();
+                    const optionCenterY = rect.top + rect.height / 2;
+                    const distance = Math.abs(centerY - optionCenterY);
+                    
+                    option.classList.remove('selected');
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestOption = option;
+                    }
+                });
+                
+                if (closestOption) {
+                    closestOption.classList.add('selected');
+                    const newValue = parseFloat(closestOption.dataset.value);
+                    if (this.currentValue !== newValue) {
+                        this.currentValue = newValue;
+                        this.onChange(newValue);
+                    }
+                }
+            }
+            
+            snapToNearest() {
+                const containerRect = this.element.getBoundingClientRect();
+                const centerY = containerRect.top + containerRect.height / 2;
+                
+                let closestOption = null;
+                let closestDistance = Infinity;
+                
+                this.element.querySelectorAll('.wheel-picker-option').forEach(option => {
+                    const rect = option.getBoundingClientRect();
+                    const optionCenterY = rect.top + rect.height / 2;
+                    const distance = Math.abs(centerY - optionCenterY);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestOption = option;
+                    }
+                });
+                
+                if (closestOption) {
+                    closestOption.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+            
+            scrollToValue(value) {
+                const option = this.element.querySelector(`[data-value="${value}"]`);
+                if (option) {
+                    option.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        this.updateSelection();
+                    }, 300);
+                }
+            }
+            
+            getValue() {
+                return this.currentValue;
+            }
+            
+            onChange(value) {
+                // Override this method
+            }
+        }
+        
+        // Initialize wheel pickers
+        let returnPicker, lossPicker;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            returnPicker = new WheelPicker('dynamic-return', 1, 50, 0.5, 5);
+            returnPicker.onChange = () => updateDynamicAnalysis();
+            
+            lossPicker = new WheelPicker('dynamic-loss', 1, 50, 0.5, 2.5);
+            lossPicker.onChange = () => updateDynamicAnalysis();
+        });
+        
+        // Add event listeners for other controls
         document.getElementById('dynamic-cap-risk').addEventListener('input', updateDynamicAnalysis);
         document.getElementById('dynamic-cap-risk').addEventListener('blur', updateDynamicAnalysis);
         document.getElementById('dynamic-kelly-flex').addEventListener('input', updateDynamicAnalysis);
@@ -481,9 +664,9 @@
             const kellyFlex = parseFloat(document.getElementById('dynamic-kelly-flex').value) / 100;
             const capRisk = parseFloat(document.getElementById('dynamic-cap-risk').value.replace(/,/g, '')) || 0;
             
-            // Get selected return and loss values
-            const selectedReturn = parseFloat(document.getElementById('dynamic-return').value);
-            const selectedLoss = parseFloat(document.getElementById('dynamic-loss').value);
+            // Get selected return and loss values from wheel pickers
+            const selectedReturn = returnPicker ? returnPicker.getValue() : 5;
+            const selectedLoss = lossPicker ? lossPicker.getValue() : 2.5;
             
             // Calculate win/loss ratio
             const winLossRatio = selectedReturn / selectedLoss;
@@ -650,8 +833,12 @@
             mathExample.style.display = 'block';
         }
 
-        // Initialize on page load
-        updateDynamicAnalysis();
+        // Initialize on page load after wheel pickers are ready
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                updateDynamicAnalysis();
+            }, 500);
+        });
     </script>
     
     <!-- Password Protection -->
