@@ -535,36 +535,6 @@
             margin-top: 8px;
         }
 
-        .kelly-flex-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .kelly-flex-button {
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 8px 4px;
-            font-size: 14px;
-            color: var(--text);
-            background-color: #fff;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .kelly-flex-button:hover {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .kelly-flex-button.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
         @media (max-width: 768px) {
             .panel--header {
                 flex-direction: column;
@@ -603,15 +573,8 @@
                         <input type="text" id="cap-risk" value="500,000" min="0" step="1000">
                     </div>
                     <div class="control">
-                        <label>Kelly Flex %</label>
-                        <div class="kelly-flex-buttons">
-                            <button type="button" class="kelly-flex-button active" data-value="50">50%</button>
-                            <button type="button" class="kelly-flex-button" data-value="60">60%</button>
-                            <button type="button" class="kelly-flex-button" data-value="70">70%</button>
-                            <button type="button" class="kelly-flex-button" data-value="80">80%</button>
-                            <button type="button" class="kelly-flex-button" data-value="90">90%</button>
-                            <button type="button" class="kelly-flex-button" data-value="100">100%</button>
-                        </div>
+                        <label for="kelly-flex">Kelly Flex %</label>
+                        <input type="number" id="kelly-flex" value="50" min="0" max="100" step="5">
                     </div>
                     <div class="control">
                         <label for="save-name">Save Configuration</label>
@@ -818,15 +781,10 @@
                 <div class="control">
                     <label for="dynamic-return">Expected Return %</label>
                     <select id="dynamic-return">
-                        <option value="0.5">0.5%</option>
                         <option value="1">1%</option>
-                        <option value="1.5">1.5%</option>
                         <option value="2">2%</option>
-                        <option value="2.5">2.5%</option>
                         <option value="3">3%</option>
-                        <option value="3.5">3.5%</option>
                         <option value="4">4%</option>
-                        <option value="4.5">4.5%</option>
                         <option value="5" selected>5%</option>
                         <option value="6">6%</option>
                         <option value="7">7%</option>
@@ -838,8 +796,6 @@
                         <option value="20">20%</option>
                         <option value="25">25%</option>
                         <option value="30">30%</option>
-                        <option value="40">40%</option>
-                        <option value="50">50%</option>
                     </select>
                 </div>
                 <div class="control">
@@ -851,22 +807,15 @@
                         <option value="2">2%</option>
                         <option value="2.5" selected>2.5%</option>
                         <option value="3">3%</option>
-                        <option value="3.5">3.5%</option>
                         <option value="4">4%</option>
-                        <option value="4.5">4.5%</option>
                         <option value="5">5%</option>
                         <option value="6">6%</option>
                         <option value="7">7%</option>
                         <option value="8">8%</option>
-                        <option value="9">9%</option>
                         <option value="10">10%</option>
                         <option value="12">12%</option>
                         <option value="15">15%</option>
                         <option value="20">20%</option>
-                        <option value="25">25%</option>
-                        <option value="30">30%</option>
-                        <option value="40">40%</option>
-                        <option value="50">50%</option>
                     </select>
                 </div>
                 <div class="control">
@@ -874,15 +823,8 @@
                     <input type="text" id="dynamic-cap-risk" value="500,000" placeholder="Enter amount">
                 </div>
                 <div class="control">
-                    <label>Kelly Flex %</label>
-                    <div class="kelly-flex-buttons">
-                        <button type="button" class="kelly-flex-button active" data-value="50">50%</button>
-                        <button type="button" class="kelly-flex-button" data-value="60">60%</button>
-                        <button type="button" class="kelly-flex-button" data-value="70">70%</button>
-                        <button type="button" class="kelly-flex-button" data-value="80">80%</button>
-                        <button type="button" class="kelly-flex-button" data-value="90">90%</button>
-                        <button type="button" class="kelly-flex-button" data-value="100">100%</button>
-                    </div>
+                    <label for="dynamic-kelly-flex">Kelly Flex %</label>
+                    <input type="number" id="dynamic-kelly-flex" value="50" min="0" max="100" step="5">
                 </div>
             </div>
             <div class="table-container">
@@ -973,30 +915,12 @@
             tableBody.appendChild(row);
         }
 
-        function getActiveKellyFlex(section = 'main') {
-            // For main control center
-            if (section === 'main') {
-                const mainButtons = document.querySelector('.sticky-table .kelly-flex-buttons');
-                const activeButton = mainButtons ? mainButtons.querySelector('.kelly-flex-button.active') : null;
-                return activeButton ? parseFloat(activeButton.dataset.value) / 100 : 0.5;
-            }
-            // For dynamic analysis section
-            else if (section === 'dynamic') {
-                const dynamicButtons = document.querySelector('.dynamic-controls .kelly-flex-buttons');
-                const activeButton = dynamicButtons ? dynamicButtons.querySelector('.kelly-flex-button.active') : null;
-                return activeButton ? parseFloat(activeButton.dataset.value) / 100 : 0.5;
-            }
-            // Default fallback
-            const activeButton = document.querySelector('.kelly-flex-button.active');
-            return activeButton ? parseFloat(activeButton.dataset.value) / 100 : 0.5;
-        }
-
         function calculateAll() {
             let totalCapRisk = 0;
             let totalPosSize = 0;
             let totalExpPnl = 0;
             const capRisk = parseFloat(capRiskInput.value) || 0;
-            const kellyFlex = getActiveKellyFlex();
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value) / 100;
             const calculations = [];
 
             // Get all rows from the table, not just tradeData
@@ -1306,20 +1230,7 @@
         document.getElementById('dynamic-loss').addEventListener('change', updateDynamicAnalysis);
         document.getElementById('dynamic-cap-risk').addEventListener('input', updateDynamicAnalysis);
         document.getElementById('dynamic-cap-risk').addEventListener('blur', updateDynamicAnalysis);
-
-        // Add event listeners for Kelly flex buttons
-        document.querySelectorAll('.kelly-flex-button').forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove active class from all buttons in the same group
-                const buttonGroup = this.closest('.kelly-flex-buttons');
-                buttonGroup.querySelectorAll('.kelly-flex-button').forEach(btn => btn.classList.remove('active'));
-                // Add active class to clicked button
-                this.classList.add('active');
-                // Update calculations
-                calculateAll();
-                updateDynamicAnalysis();
-            });
-        });
+        document.getElementById('dynamic-kelly-flex').addEventListener('input', updateDynamicAnalysis);
         
         // Add event listeners for save/load functionality
         document.getElementById('save-config').addEventListener('click', saveConfiguration);
@@ -1682,7 +1593,7 @@
 
         function updatePositionSizeSensitivity() {
             const positionSizeSensitivityBody = document.getElementById('position-size-sensitivity-body');
-            const kellyFlex = getActiveKellyFlex();
+            const kellyFlex = parseFloat(document.getElementById('kelly-flex').value) / 100;
             const capRisk = parseFloat(document.getElementById('cap-risk').value.replace(/,/g, '')) || 0;
             
             let sensitivityHtml = '';
@@ -1722,7 +1633,7 @@
 
         function updateDynamicAnalysis() {
             const dynamicAnalysisBody = document.getElementById('dynamic-analysis-body');
-            const kellyFlex = getActiveKellyFlex('dynamic');
+            const kellyFlex = parseFloat(document.getElementById('dynamic-kelly-flex').value) / 100;
             const capRisk = parseFloat(document.getElementById('dynamic-cap-risk').value.replace(/,/g, '')) || 0;
             
             // Get selected return and loss values
@@ -1907,14 +1818,14 @@
                 timestamp: new Date().toISOString(),
                 globalSettings: {
                     capRisk: document.getElementById('cap-risk').value,
-                    kellyFlex: getActiveKellyFlex('main') * 100
+                    kellyFlex: document.getElementById('kelly-flex').value
                 },
                 tradeData: [...tradeData],
                 dynamicSettings: {
                     return: document.getElementById('dynamic-return').value,
                     loss: document.getElementById('dynamic-loss').value,
                     capRisk: document.getElementById('dynamic-cap-risk').value,
-                    kellyFlex: getActiveKellyFlex('dynamic') * 100
+                    kellyFlex: document.getElementById('dynamic-kelly-flex').value
                 }
             };
             
@@ -1950,35 +1861,17 @@
             
             // Load global settings
             document.getElementById('cap-risk').value = config.globalSettings.capRisk;
-            // Set main Kelly flex button
-            const mainButtons = document.querySelector('.sticky-table .kelly-flex-buttons');
-            if (mainButtons) {
-                mainButtons.querySelectorAll('.kelly-flex-button').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (parseFloat(btn.dataset.value) === config.globalSettings.kellyFlex) {
-                        btn.classList.add('active');
-                    }
-                });
-            }
-
+            document.getElementById('kelly-flex').value = config.globalSettings.kellyFlex;
+            
             // Load trade data
             tradeData = [...config.tradeData];
             refreshTable();
-
+            
             // Load dynamic settings
             document.getElementById('dynamic-return').value = config.dynamicSettings.return;
             document.getElementById('dynamic-loss').value = config.dynamicSettings.loss;
             document.getElementById('dynamic-cap-risk').value = config.dynamicSettings.capRisk;
-            // Set dynamic Kelly flex button
-            const dynamicButtons = document.querySelector('.dynamic-controls .kelly-flex-buttons');
-            if (dynamicButtons) {
-                dynamicButtons.querySelectorAll('.kelly-flex-button').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (parseFloat(btn.dataset.value) === config.dynamicSettings.kellyFlex) {
-                        btn.classList.add('active');
-                    }
-                });
-            }
+            document.getElementById('dynamic-kelly-flex').value = config.dynamicSettings.kellyFlex;
             
             // Recalculate everything
             calculateAll();
